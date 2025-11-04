@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a4d2e">
+    <title>🐉 Dragon Radar</title>
+    <style>
+        :root {
+            --bg-primary: #00cc44;
+            --bg-gradient-start: #00cc44;
+            --bg-gradient-end: #00ff66;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --screen-bg: white;
+            --panel-bg: rgba(0, 0, 0, 0.7);
+            --grid-color: rgba(0, 255, 102, 0.3);
+            --border-color: #e5e7eb;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a4d2e;
+            --bg-gradient-start: #1a4d2e;
+            --bg-gradient-end: #0d3d29;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --screen-bg: #1a1a1a;
+            --panel-bg: rgba(0, 0, 0, 0.9);
+            --grid-color: rgba(0, 255, 102, 0.2);
+            --border-color: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            touch-action: pan-x pan-y;
+            transition: background-color 0.3s;
+        }
+
+        #app {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-primary);
+            background-image: 
+                linear-gradient(0deg, var(--grid-color) 2px, transparent 2px),
+                linear-gradient(90deg, var(--grid-color) 2px, transparent 2px);
+            background-size: 40px 40px;
+            transition: background-color 0.3s, background-size 0.3s;
+        }
+
+        .menu-container {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 2000;
+        }
+
+        .menu-toggle {
+            width: 50px;
+            height: 50px;
+            background: var(--screen-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            color: var(--text-primary);
+        }
+
+        .menu-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .menu-items {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            background: var(--screen-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            min-width: 220px;
+        }
+
+        .menu-items.show {
+            display: flex;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .menu-item:hover {
+            background: var(--border-color);
+        }
+
+        .menu-item:active {
+            transform: scale(0.98);
+        }
+
+        .menu-item-icon {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .chat-fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #00cc44;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 150;
+            transition: all 0.3s, opacity 0.3s;
+            opacity: 1;
+        }
+
+        .chat-fab.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .chat-fab:active {
+            transform: scale(0.95);
+        }
+
+        .screen {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            z-index: 1000;
+            overflow-y: auto;
+            transition: background 0.3s;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .screen-content {
+            background: var(--screen-bg);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transition: background-color 0.3s;
+        }
+
+        .screen-content h1 {
+            color: #00cc44;
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 32px;
+        }
+
+        .screen-content h2 {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-primary);
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            background: var(--screen-bg);
+            color: var(--text-primary);
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #00cc44;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00cc44 0%, #00ff66 100%);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:active {
+            transform: scale(0.98);
+            background: var(--border-color);
+        }
+
+        .error-message {
+            color: #ff4444;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #mapContainer, #radarContainer {
+            position: fixed;
+            inset: 0;
+            touch-action: pan-x pan-y pinch-zoom;
+        }
+
+        #mapCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: pan-x pan-y pinch-zoom;
+        }
+
+        #radarCanvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(0.5px);
+        }
+
+        #radarBalls {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .dragonball {
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .info-label {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        .marker {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .marker-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .marker-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #00cc44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .marker-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .marker-name {
+            margin-top: 4px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .my-marker .marker-avatar {
+            border-color: #ff4444;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .direction-arrow {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #ff4444;
+            animation: blink 1s infinite;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.3; }
+        }
+
+        .chat-panel {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            height: 70%;
+            background: var(--screen-bg);
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+            transition: bottom 0.3s;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-panel.open {
+            bottom: 0;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            color: var(--text-primary);
+            font-size: 18px;
+        }
+
+        .chat-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--border-color);
+            color: var(--text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            display: flex;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message.received {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px;
+            border-radius: 16px;
+        }
+
+        .message.sent .message-bubble {
+            background: #00cc44;
+            color: white;
+        }
+
+        .message.received .message-bubble {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .message-sender {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .message-text {
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .chat-input-container {
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input-container input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 24px;
+            font-size: 14px;
+            background: var(--screen-bg);
+            color: var(--text-primary);
+        }
+
+        .chat-input-container input:focus {
+            outline: none;
+            border-color: #00cc44;
+        }
+
+        .chat-send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: #00cc44;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .group-item {
+            padding: 16px;
+            border-radius: 12px;
+            background: var(--border-color);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+        }
+
+        .group-item:active {
+            transform: scale(0.98);
+        }
+
+        .group-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .group-code {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--screen-bg);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .stats {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--panel-bg);
+            padding: 16px;
+            border-radius: 16px;
+            color: white;
+            font-size: 14px;
+            z-index: 100;
+            min-width: 150px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stats div {
+            margin-bottom: 8px;
+        }
+
+        .stats div:last-child {
+            margin-bottom: 0;
+        }
+
+        .zoom-indicator {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .zoom-indicator.show {
+            opacity: 1;
+        }
+
+        .avatar-picker {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .avatar-option {
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--screen-bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar-option:active {
+            transform: scale(0.95);
+        }
+
+        .avatar-option.selected {
+            border-color: #00cc44;
+            box-shadow: 0 0 0 3px rgba(0, 204, 68, 0.2);
+        }
+
+        .avatar-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-upload {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar-upload input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Menú hamburguesa -->
+        <div class="menu-container">
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div class="menu-items" id="menuItems">
+                <div class="menu-item" onclick="toggleMode()">
+                    <span class="menu-item-icon" id="modeIcon">🎯</span>
+                    <span id="modeText">Cambiar a Radar</span>
+                </div>
+                <div class="menu-item" onclick="showAvatarSelector()">
+                    <span class="menu-item-icon">👤</span>
+                    <span>Cambiar Avatar</span>
+                </div>
+                <div class="menu-item" onclick="copyGroupCode()">
+                    <span class="menu-item-icon">📋</span>
+                    <span>Copiar Código</span>
+                </div>
+                <div class="menu-item" onclick="logout()">
+                    <span class="menu-item-icon">🚪</span>
+                    <span>Cerrar Sesión</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón tema -->
+        <div style="position: fixed; top: 20px; right: 20px; z-index: 2000;">
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats" id="stats">
+            <div id="welcomeUser">Cargando...</div>
+            <div id="rangeDisplay">Rango: ---</div>
+            <div id="usersDisplay">Usuarios: 0</div>
+        </div>
+
+        <!-- Indicador de zoom -->
+        <div class="zoom-indicator" id="zoomIndicator">Zoom: 100m</div>
+
+        <!-- Chat FAB -->
+        <button class="chat-fab" id="chatFab" onclick="toggleChat()">💬</button>
+
+        <!-- Mapa -->
+        <div id="mapContainer" class="hidden">
+            <div id="mapCanvas"></div>
+        </div>
+
+        <!-- Radar -->
+        <div id="radarContainer" class="hidden">
+            <canvas id="radarCanvas"></canvas>
+            <div id="radarBalls"></div>
+        </div>
+
+        <!-- Chat Panel -->
+        <div class="chat-panel" id="chatPanel">
+            <div class="chat-header">
+                <h3>💬 Chat del Grupo</h3>
+                <button class="chat-close" onclick="toggleChat()">✕</button>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-container">
+                <input type="text" id="chatInput" placeholder="Escribe un mensaje..." onkeypress="handleChatKeyPress(event)">
+                <button class="chat-send-btn" onclick="sendMessage()">📤</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Screen -->
+    <div class="screen active" id="welcomeScreen">
+        <div class="screen-content">
+            <h1>🐉</h1>
+            <h2>Dragon Radar</h2>
+            <button class="btn btn-primary" onclick="showLogin()">Iniciar Sesión</button>
+            <button class="btn btn-secondary" onclick="showRegister()">Registrarse</button>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div class="screen" id="loginScreen">
+        <div class="screen-content">
+            <h1>🔐</h1>
+            <h2>Iniciar Sesión</h2>
+            <div class="form-group">
+                <label>Correo</label>
+                <input type="email" id="loginEmail" placeholder="tu@email.com">
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="loginPassword" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" onclick="login()">Entrar</button>
+            <button class="btn btn-secondary" onclick="showWelcome()">Volver</button>
+            <div class="error-message" id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- Register Screen -->
+    <div class="screen" id="registerScreen">
+        <div class="screen-content">
+            <h1>✨</h1>
+            <h2>Crear Cuenta</h2>
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="registerName" placeholder="Tu nombre">
+            </div>
+            <div class="form-group">
+                <label>Correo</label>
+                <input type="email" id="registerEmail" placeholder="tu@email.com">
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="registerPassword" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" onclick="register()">Registrarse</button>
+            <button class="btn btn-secondary" onclick="showWelcome()">Volver</button>
+            <div class="error-message" id="registerError"></div>
+        </div>
+    </div>
+
+    <!-- Groups Screen -->
+    <div class="screen" id="groupsScreen">
+        <div class="screen-content">
+            <h1>👥</h1>
+            <h2>Tus Grupos</h2>
+            <div id="groupsList"></div>
+            <button class="btn btn-primary" onclick="showCreateGroup()">Crear Grupo</button>
+            <button class="btn btn-secondary" onclick="showJoinGroup()">Unirse a Grupo</button>
+        </div>
+    </div>
+
+    <!-- Create Group Screen -->
+    <div class="screen" id="createGroupScreen">
+        <div class="screen-content">
+            <h1>➕</h1>
+            <h2>Crear Grupo</h2>
+            <div class="form-group">
+                <label>Nombre del Grupo</label>
+                <input type="text" id="groupName" placeholder="Ej: Familia">
+            </div>
+            <button class="btn btn-primary" onclick="createGroup()">Crear</button>
+            <button class="btn btn-secondary" onclick="showGroups()">Volver</button>
+            <div class="error-message" id="createGroupError"></div>
+        </div>
+    </div>
+
+    <!-- Join Group Screen -->
+    <div class="screen" id="joinGroupScreen">
+        <div class="screen-content">
+            <h1>🔗</h1>
+            <h2>Unirse a Grupo</h2>
+            <div class="form-group">
+                <label>Código del Grupo</label>
+                <input type="text" id="joinCode" placeholder="Ej: ABC123">
+            </div>
+            <button class="btn btn-primary" onclick="joinGroup()">Unirse</button>
+            <button class="btn btn-secondary" onclick="showGroups()">Volver</button>
+            <div class="error-message" id="joinGroupError"></div>
+        </div>
+    </div>
+
+    <!-- Avatar Selector Screen -->
+    <div class="screen" id="avatarScreen">
+        <div class="screen-content">
+            <h1>👤</h1>
+            <h2>Elige tu Avatar</h2>
+            <div class="avatar-picker" id="avatarPicker">
+                <div class="avatar-option" onclick="selectAvatar('🐉')">🐉</div>
+                <div class="avatar-option" onclick="selectAvatar('💫')">💫</div>
+                <div class="avatar-option" onclick="selectAvatar('⭐')">⭐</div>
+                <div class="avatar-option" onclick="selectAvatar('🔥')">🔥</div>
+                <div class="avatar-option" onclick="selectAvatar('⚡')">⚡</div>
+                <div class="avatar-option" onclick="selectAvatar('🌟')">🌟</div>
+                <div class="avatar-option" onclick="selectAvatar('💎')">💎</div>
+                <div class="avatar-option avatar-upload">
+                    📷
+                    <input type="file" accept="image/*" onchange="uploadAvatar(event)">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveAvatar()">Guardar</button>
+            <button class="btn btn-secondary" onclick="closeAvatarSelector()">Cancelar</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxGVLaKi3JD8rCbVDC6dkh5MR3VLO8-Ak",
+            authDomain: "radar-dragon.firebaseapp.com",
+            projectId: "radar-dragon",
+            storageBucket: "radar-dragon.appspot.com",
+            messagingSenderId: "659371720272",
+            appId: "1:659371720272:web:4f8fc66d23cbb05df7a87b"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        const state = {
+            currentUser: null,
+            currentGroup: null,
+            myLocation: null,
+            detectedUsers: [],
+            messages: [],
+            range: 100,
+            mode: 'map',
+            map: null,
+            markers: {},
+            locationWatcher: null,
+            usersListener: null,
+            messagesListener: null,
+            menuOpen: false,
+            chatOpen: false,
+            theme: localStorage.getItem('theme') || 'dark',
+            selectedAvatar: null,
+            avatarFile: null,
+            zoomLevel: 1,
+            lastTouchDistance: 0,
+            zoomIndicatorTimeout: null
+        };
+
+        // Aplicar tema inicial
+        document.documentElement.setAttribute('data-theme', state.theme);
+        if (state.theme === 'light') {
+            document.getElementById('themeToggle').textContent = '☀️';
+        }
+
+        // ==========================================
+        // UTILIDADES
+        // ==========================================
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function convertDistance(meters) {
+            if (meters < 1000) {
+                return `${Math.round(meters)}m`;
+            } else {
+                return `${(meters / 1000).toFixed(1)}km`;
+            }
+        }
+
+        function generateGroupCode() {
+            return Math.random().toString(36).substr(2, 6).toUpperCase();
+        }
+
+        function toggleMenu() {
+            state.menuOpen = !state.menuOpen;
+            const menuItems = document.getElementById('menuItems');
+            if (state.menuOpen) {
+                menuItems.classList.add('show');
+            } else {
+                menuItems.classList.remove('show');
+            }
+        }
+
+        function toggleTheme() {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', state.theme);
+            localStorage.setItem('theme', state.theme);
+            const toggle = document.getElementById('themeToggle');
+            toggle.textContent = state.theme === 'dark' ? '🌙' : '☀️';
+        }
+
+        // ==========================================
+        // NAVEGACIÓN
+        // ==========================================
+        function showWelcome() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('welcomeScreen').classList.add('active');
+        }
+
+        function showLogin() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('loginScreen').classList.add('active');
+        }
+
+        function showRegister() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('registerScreen').classList.add('active');
+        }
+
+        function showGroups() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('groupsScreen').classList.add('active');
+            loadGroups();
+        }
+
+        function showCreateGroup() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('createGroupScreen').classList.add('active');
+        }
+
+        function showJoinGroup() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('joinGroupScreen').classList.add('active');
+        }
+
+        function showAvatarSelector() {
+            state.selectedAvatar = state.currentUser.avatar;
+            state.avatarFile = null;
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('avatarScreen').classList.add('active');
+            updateAvatarSelection();
+            toggleMenu();
+        }
+
+        function closeAvatarSelector() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        }
+
+        // ==========================================
+        // AUTH
+        // ==========================================
+        async function login() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            if (!email || !password) {
+                errorDiv.textContent = 'Por favor completa todos los campos';
+                return;
+            }
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function register() {
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const errorDiv = document.getElementById('registerError');
+
+            if (!name || !email || !password) {
+                errorDiv.textContent = 'Por favor completa todos los campos';
+                return;
+            }
+
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await db.collection('users').doc(userCredential.user.uid).set({
+                    name: name,
+                    email: email,
+                    username: name,
+                    avatar: '🐉',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function logout() {
+            if (state.locationWatcher) {
+                navigator.geolocation.clearWatch(state.locationWatcher);
+            }
+            if (state.usersListener) {
+                state.usersListener();
+            }
+            if (state.messagesListener) {
+                state.messagesListener();
+            }
+            await auth.signOut();
+            toggleMenu();
+        }
+
+        // ==========================================
+        // AVATAR
+        // ==========================================
+        function selectAvatar(emoji) {
+            state.selectedAvatar = emoji;
+            state.avatarFile = null;
+            updateAvatarSelection();
+        }
+
+        function updateAvatarSelection() {
+            document.querySelectorAll('.avatar-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.textContent.trim() === state.selectedAvatar) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+
+        async function uploadAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                state.avatarFile = file;
+                state.selectedAvatar = null;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const uploadOption = document.querySelector('.avatar-upload');
+                    uploadOption.innerHTML = `<img src="${e.target.result}"><input type="file" accept="image/*" onchange="uploadAvatar(event)">`;
+                    uploadOption.classList.add('selected');
+                    document.querySelectorAll('.avatar-option:not(.avatar-upload)').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function saveAvatar() {
+            try {
+                let avatarValue = state.selectedAvatar;
+
+                if (state.avatarFile) {
+                    const storageRef = storage.ref(`avatars/${state.currentUser.uid}`);
+                    await storageRef.put(state.avatarFile);
+                    avatarValue = await storageRef.getDownloadURL();
+                }
+
+                await db.collection('users').doc(state.currentUser.uid).update({
+                    avatar: avatarValue
+                });
+
+                state.currentUser.avatar = avatarValue;
+                closeAvatarSelector();
+                
+                if (state.mode === 'map') {
+                    renderMap();
+                }
+            } catch (error) {
+                console.error('Error al guardar avatar:', error);
+                alert('Error al guardar avatar');
+            }
+        }
+
+        // ==========================================
+        // GRUPOS
+        // ==========================================
+        async function loadGroups() {
+            try {
+                const snapshot = await db.collection('groups')
+                    .where('members', 'array-contains', state.currentUser.uid)
+                    .get();
+
+                const groupsList = document.getElementById('groupsList');
+                if (snapshot.empty) {
+                    groupsList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 20px;">No tienes grupos aún</p>';
+                    return;
+                }
+
+                groupsList.innerHTML = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return `
+                        <div class="group-item" onclick="selectGroup('${doc.id}')">
+                            <div class="group-name">${data.name}</div>
+                            <div class="group-code">Código: ${data.code}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error al cargar grupos:', error);
+            }
+        }
+
+        async function createGroup() {
+            const name = document.getElementById('groupName').value.trim();
+            const errorDiv = document.getElementById('createGroupError');
+
+            if (!name) {
+                errorDiv.textContent = 'Por favor ingresa un nombre';
+                return;
+            }
+
+            try {
+                const code = generateGroupCode();
+                await db.collection('groups').add({
+                    name: name,
+                    code: code,
+                    members: [state.currentUser.uid],
+                    createdBy: state.currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showGroups();
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function joinGroup() {
+            const code = document.getElementById('joinCode').value.trim().toUpperCase();
+            const errorDiv = document.getElementById('joinGroupError');
+
+            if (!code) {
+                errorDiv.textContent = 'Por favor ingresa un código';
+                return;
+            }
+
+            try {
+                const snapshot = await db.collection('groups').where('code', '==', code).get();
+                if (snapshot.empty) {
+                    errorDiv.textContent = 'Código inválido';
+                    return;
+                }
+
+                const groupDoc = snapshot.docs[0];
+                await db.collection('groups').doc(groupDoc.id).update({
+                    members: firebase.firestore.FieldValue.arrayUnion(state.currentUser.uid)
+                });
+                showGroups();
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function selectGroup(groupId) {
+            state.currentGroup = groupId;
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            startTracking();
+        }
+
+        async function copyGroupCode() {
+            try {
+                const groupDoc = await db.collection('groups').doc(state.currentGroup).get();
+                const code = groupDoc.data().code;
+                await navigator.clipboard.writeText(code);
+                alert(`Código copiado: ${code}`);
+            } catch (error) {
+                console.error('Error al copiar código:', error);
+                alert('Error al copiar código');
+            }
+            toggleMenu();
+        }
+
+        // ==========================================
+        // TRACKING
+        // ==========================================
+        function startTracking() {
+            if (state.locationWatcher) {
+                navigator.geolocation.clearWatch(state.locationWatcher);
+            }
+
+            state.locationWatcher = navigator.geolocation.watchPosition(
+                updateLocation,
+                (error) => console.error('Error de geolocalización:', error),
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+            );
+
+            listenToUsers();
+            listenToMessages();
+            
+            state.mode = 'map';
+            document.getElementById('mapContainer').classList.remove('hidden');
+            renderMap();
+        }
+
+        async function updateLocation(position) {
+            state.myLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+
+            try {
+                await db.collection('locations').doc(state.currentUser.uid).set({
+                    userId: state.currentUser.uid,
+                    groupId: state.currentGroup,
+                    lat: state.myLocation.lat,
+                    lng: state.myLocation.lng,
+                    name: state.currentUser.name,
+                    avatar: state.currentUser.avatar,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Error al actualizar ubicación:', error);
+            }
+        }
+
+        function listenToUsers() {
+            if (state.usersListener) {
+                state.usersListener();
+            }
+
+            state.usersListener = db.collection('locations')
+                .where('groupId', '==', state.currentGroup)
+                .onSnapshot(snapshot => {
+                    state.detectedUsers = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.userId !== state.currentUser.uid && state.myLocation) {
+                            const distance = calculateDistance(
+                                state.myLocation.lat,
+                                state.myLocation.lng,
+                                data.lat,
+                                data.lng
+                            );
+                            state.detectedUsers.push({
+                                userId: data.userId,
+                                name: data.name,
+                                avatar: data.avatar,
+                                lat: data.lat,
+                                lng: data.lng,
+                                distance: distance,
+                                stars: Math.floor(Math.random() * 7) + 1
+                            });
+                        }
+                    });
+                    
+                    document.getElementById('usersDisplay').textContent = `Usuarios: ${state.detectedUsers.length}`;
+                    
+                    if (state.mode === 'map') {
+                        renderMap();
+                    } else {
+                        renderRadar();
+                    }
+                });
+        }
+
+        // ==========================================
+        // ZOOM CON PINCH
+        // ==========================================
+        function getTouchDistance(touch1, touch2) {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function updateZoomLevel(newZoom) {
+            // Limitar el zoom entre 0.5 y 3
+            state.zoomLevel = Math.max(0.5, Math.min(3, newZoom));
+            
+            // Calcular rango basado en zoom (invertido: más zoom = menos rango)
+            // Zoom 0.5 = 1000m, Zoom 1 = 100m, Zoom 3 = 10m
+            if (state.zoomLevel <= 0.7) {
+                state.range = 1000;
+            } else if (state.zoomLevel >= 2) {
+                state.range = 10;
+            } else {
+                // Interpolación logarítmica entre 100m y 10m/1000m
+                const normalizedZoom = (state.zoomLevel - 0.7) / (2 - 0.7);
+                state.range = Math.round(100 * Math.pow(0.1, normalizedZoom));
+            }
+            
+            // Actualizar UI
+            document.getElementById('rangeDisplay').textContent = `Rango: ${convertDistance(state.range)}`;
+            
+            // Actualizar tamaño de cuadrícula
+            const gridSize = Math.round(40 * state.zoomLevel);
+            document.getElementById('app').style.backgroundSize = `${gridSize}px ${gridSize}px`;
+            
+            // Mostrar indicador de zoom
+            const indicator = document.getElementById('zoomIndicator');
+            indicator.textContent = `Zoom: ${convertDistance(state.range)}`;
+            indicator.classList.add('show');
+            
+            clearTimeout(state.zoomIndicatorTimeout);
+            state.zoomIndicatorTimeout = setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 1500);
+            
+            // Re-renderizar
+            if (state.mode === 'map') {
+                renderMap();
+            } else {
+                renderRadar();
+            }
+        }
+
+        // Touch handlers para ambos contenedores
+        function setupTouchHandlers(elementId) {
+            const element = document.getElementById(elementId);
+            
+            element.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    state.lastTouchDistance = getTouchDistance(e.touches[0], e.touches[1]);
+                }
+            });
+
+            element.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+                    
+                    if (state.lastTouchDistance > 0) {
+                        const delta = currentDistance - state.lastTouchDistance;
+                        const zoomDelta = delta * 0.005;
+                        updateZoomLevel(state.zoomLevel + zoomDelta);
+                    }
+                    
+                    state.lastTouchDistance = currentDistance;
+                }
+            }, { passive: false });
+
+            element.addEventListener('touchend', () => {
+                state.lastTouchDistance = 0;
+            });
+        }
+
+        // ==========================================
+        // MAPA
+        // ==========================================
+        function createDragonBallSVG(stars = 1, size = 50) {
+            return `
+                <svg width="${size}" height="${size}" viewBox="0 0 100 100">
+                    <defs>
+                        <radialGradient id="ballGradient${stars}">
+                            <stop offset="0%" style="stop-color:#ff8c00;stop-opacity:1" />
+                            <stop offset="70%" style="stop-color:#ff6600;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#cc4400;stop-opacity:1" />
+                        </radialGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="48" fill="url(#ballGradient${stars})" stroke="#cc4400" stroke-width="2"/>
+                    ${Array.from({length: stars}, (_, i) => {
+                        const angle = (i * 360 / stars) - 90;
+                        const rad = angle * Math.PI / 180;
+                        const cx = 50 + Math.cos(rad) * 25;
+                        const cy = 50 + Math.sin(rad) * 25;
+                        return `<circle cx="${cx}" cy="${cy}" r="6" fill="#ffcc00" stroke="#ff6600" stroke-width="1.5"/>`;
+                    }).join('')}
+                </svg>
+            `;
+        }
+
+        function createMarkerElement(user, isMe = false) {
+            const marker = document.createElement('div');
+            marker.className = `marker ${isMe ? 'my-marker' : ''}`;
+            
+            // Calcular tamaño basado en zoom
+            const baseSize = 50;
+            const size = Math.round(baseSize * state.zoomLevel);
+            
+            const avatarContent = user.avatar.startsWith('http') 
+                ? `<img src="${user.avatar}" alt="${user.name}">`
+                : createDragonBallSVG(Math.floor(Math.random() * 7) + 1, size);
+            
+            marker.innerHTML = `
+                <div class="marker-content">
+                    <div class="marker-avatar" style="width: ${size}px; height: ${size}px; font-size: ${size * 0.5}px;">
+                        ${avatarContent}
+                    </div>
+                    <div class="marker-name">${user.name}</div>
+                </div>
+            `;
+            
+            return marker;
+        }
+
+        function renderMap() {
+            const container = document.getElementById('mapCanvas');
+            
+            if (!state.myLocation) return;
+
+            // Limpiar marcadores existentes
+            container.innerHTML = '';
+
+            const centerX = container.offsetWidth / 2;
+            const centerY = container.offsetHeight / 2;
+
+            // Escala basada en rango y zoom
+            const scale = (Math.min(container.offsetWidth, container.offsetHeight) * 0.8) / state.range;
+
+            // Marcador propio
+            const myMarker = createMarkerElement({
+                name: state.currentUser.name,
+                avatar: state.currentUser.avatar
+            }, true);
+            myMarker.style.left = centerX + 'px';
+            myMarker.style.top = centerY + 'px';
+            container.appendChild(myMarker);
+
+            // Marcadores de otros usuarios
+            state.detectedUsers.forEach(user => {
+                if (user.distance <= state.range) {
+                    const dx = (user.lng - state.myLocation.lng) * 111320 * Math.cos(state.myLocation.lat * Math.PI / 180);
+                    const dy = (user.lat - state.myLocation.lat) * 110540;
+
+                    const x = centerX + (dx * scale);
+                    const y = centerY - (dy * scale);
+
+                    const userMarker = createMarkerElement(user);
+                    userMarker.style.left = x + 'px';
+                    userMarker.style.top = y + 'px';
+                    container.appendChild(userMarker);
+                } else {
+                    // Flecha direccional para usuarios fuera de rango
+                    const angle = Math.atan2(
+                        user.lat - state.myLocation.lat,
+                        user.lng - state.myLocation.lng
+                    );
+                    
+                    let position = '';
+                    let arrowRotation = 0;
+                    
+                    const deg = (angle * 180 / Math.PI + 450) % 360;
+                    
+                    if (deg >= 337.5 || deg < 22.5) {
+                        position = 'right: 50px; top: 50%; margin-top: -25px;';
+                        arrowRotation = 0;
+                    } else if (deg >= 22.5 && deg < 67.5) {
+                        position = 'right: 80px; top: 80px;';
+                        arrowRotation = 45;
+                    } else if (deg >= 67.5 && deg < 112.5) {
+                        position = 'left: 50%; top: 50px; margin-left: -25px;';
+                        arrowRotation = 90;
+                    } else if (deg >= 112.5 && deg < 157.5) {
+                        position = 'left: 80px; top: 80px;';
+                        arrowRotation = 135;
+                    } else if (deg >= 157.5 && deg < 202.5) {
+                        position = 'left: 50px; top: 50%; margin-top: -25px;';
+                        arrowRotation = 180;
+                    } else if (deg >= 202.5 && deg < 247.5) {
+                        position = 'left: 80px; bottom: 80px;';
+                        arrowRotation = 225;
+                    } else if (deg >= 247.5 && deg < 292.5) {
+                        position = 'left: 50%; bottom: 50px; margin-left: -25px;';
+                        arrowRotation = 270;
+                    } else {
+                        position = 'right: 80px; bottom: 80px;';
+                        arrowRotation = 315;
+                    }
+                    
+                    const arrow = document.createElement('div');
+                    arrow.className = 'direction-arrow';
+                    arrow.style.cssText = position;
+                    arrow.innerHTML = `<span style="transform: rotate(${arrowRotation}deg); display: block;">→</span>`;
+                    arrow.title = `${user.name} - ${convertDistance(user.distance)}`;
+                    container.appendChild(arrow);
+                }
+            });
+        }
+
+        // ==========================================
+        // RADAR
+        // ==========================================
+        let radarAnimationFrame;
+
+        function renderRadar() {
+            const canvas = document.getElementById('radarCanvas');
+            const ctx = canvas.getContext('2d');
+            const size = Math.min(window.innerWidth, window.innerHeight) * 0.8;
+            canvas.width = size;
+            canvas.height = size;
+
+            let angle = 0;
+
+            function draw() {
+                ctx.clearRect(0, 0, size, size);
+
+                // Círculos concéntricos
+                ctx.strokeStyle = 'rgba(0, 255, 102, 0.3)';
+                ctx.lineWidth = 2;
+                for (let i = 1; i <= 3; i++) {
+                    ctx.beginPath();
+                    ctx.arc(size/2, size/2, (size/2) * (i/3), 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // Líneas de la cruz
+                ctx.beginPath();
+                ctx.moveTo(size/2, 0);
+                ctx.lineTo(size/2, size);
+                ctx.moveTo(0, size/2);
+                ctx.lineTo(size, size/2);
+                ctx.stroke();
+
+                // Línea de barrido
+                ctx.save();
+                ctx.translate(size/2, size/2);
+                ctx.rotate(angle);
+                
+                const gradient = ctx.createLinearGradient(0, 0, size/2, 0);
+                gradient.addColorStop(0, 'rgba(0, 255, 102, 0)');
+                gradient.addColorStop(0.5, 'rgba(0, 255, 102, 0.3)');
+                gradient.addColorStop(1, 'rgba(0, 255, 102, 0.8)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, size/2, 0, Math.PI/3);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.restore();
+
+                angle += 0.02;
+                radarAnimationFrame = requestAnimationFrame(draw);
+            }
+
+            draw();
+
+            const radarBalls = document.getElementById('radarBalls');
+            radarBalls.innerHTML = '';
+
+            state.detectedUsers.forEach(user => {
+                if (user.distance <= state.range) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = (user.distance / state.range) * (size/2);
+                    const x = Math.cos(angle) * distance;
+                    const y = Math.sin(angle) * distance;
+
+                    // Calcular tamaño basado en zoom
+                    const baseSize = 60;
+                    const ballSize = Math.round(baseSize * state.zoomLevel);
+
+                    const ball = document.createElement('div');
+                    ball.style.position = 'absolute';
+                    ball.style.left = '50%';
+                    ball.style.top = '50%';
+                    ball.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+                    ball.style.width = ballSize + 'px';
+                    ball.style.height = ballSize + 'px';
+                    ball.className = 'dragonball';
+                    
+                    const avatarContent = user.avatar.startsWith('http')
+                        ? `<img src="${user.avatar}" style="width: ${ballSize}px; height: ${ballSize}px; border-radius: 50%; border: 3px solid #00cc44;">`
+                        : createDragonBallSVG(user.stars, ballSize);
+                    
+                    ball.innerHTML = `
+                        ${avatarContent}
+                        <div class="info-label" style="top: ${ballSize + 5}px;">
+                            ${user.name} - ${convertDistance(user.distance)}
+                        </div>
+                    `;
+                    radarBalls.appendChild(ball);
+                } else {
+                    const angle = Math.atan2(
+                        user.lat - state.myLocation.lat,
+                        user.lng - state.myLocation.lng
+                    );
+                    
+                    let position = '';
+                    let arrowRotation = 0;
+                    
+                    const deg = (angle * 180 / Math.PI + 450) % 360;
+                    
+                    if (deg >= 337.5 || deg < 22.5) {
+                        position = 'right: 50px; top: 50%; margin-top: -25px;';
+                        arrowRotation = 0;
+                    } else if (deg >= 22.5 && deg < 67.5) {
+                        position = 'right: 80px; top: 80px;';
+                        arrowRotation = 45;
+                    } else if (deg >= 67.5 && deg < 112.5) {
+                        position = 'left: 50%; top: 50px; margin-left: -25px;';
+                        arrowRotation = 90;
+                    } else if (deg >= 112.5 && deg < 157.5) {
+                        position = 'left: 80px; top: 80px;';
+                        arrowRotation = 135;
+                    } else if (deg >= 157.5 && deg < 202.5) {
+                        position = 'left: 50px; top: 50%; margin-top: -25px;';
+                        arrowRotation = 180;
+                    } else if (deg >= 202.5 && deg < 247.5) {
+                        position = 'left: 80px; bottom: 80px;';
+                        arrowRotation = 225;
+                    } else if (deg >= 247.5 && deg < 292.5) {
+                        position = 'left: 50%; bottom: 50px; margin-left: -25px;';
+                        arrowRotation = 270;
+                    } else {
+                        position = 'right: 80px; bottom: 80px;';
+                        arrowRotation = 315;
+                    }
+                    
+                    const arrow = document.createElement('div');
+                    arrow.className = 'direction-arrow';
+                    arrow.style.cssText = position;
+                    arrow.innerHTML = `<span style="transform: rotate(${arrowRotation}deg); display: block;">→</span>`;
+                    arrow.title = `${user.name} - ${convertDistance(user.distance)}`;
+                    radarBalls.appendChild(arrow);
+                }
+            });
+        }
+
+        function toggleMode() {
+            state.mode = state.mode === 'map' ? 'radar' : 'map';
+            const modeIcon = document.getElementById('modeIcon');
+            const modeText = document.getElementById('modeText');
+            const mapContainer = document.getElementById('mapContainer');
+            const radarContainer = document.getElementById('radarContainer');
+
+            if (state.mode === 'radar') {
+                if (modeIcon) modeIcon.textContent = '🗺️';
+                if (modeText) modeText.textContent = 'Cambiar a Mapa';
+                mapContainer.classList.add('hidden');
+                radarContainer.classList.remove('hidden');
+                renderRadar();
+            } else {
+                if (modeIcon) modeIcon.textContent = '🎯';
+                if (modeText) modeText.textContent = 'Cambiar a Radar';
+                radarContainer.classList.add('hidden');
+                mapContainer.classList.remove('hidden');
+                if (radarAnimationFrame) {
+                    cancelAnimationFrame(radarAnimationFrame);
+                }
+                renderMap();
+            }
+            toggleMenu();
+        }
+
+        // ==========================================
+        // CHAT
+        // ==========================================
+        function toggleChat() {
+            state.chatOpen = !state.chatOpen;
+            const panel = document.getElementById('chatPanel');
+            const fab = document.getElementById('chatFab');
+            
+            if (state.chatOpen) {
+                panel.classList.add('open');
+                fab.classList.add('hidden');
+                setTimeout(() => {
+                    const container = document.getElementById('chatMessages');
+                    container.scrollTop = container.scrollHeight;
+                }, 100);
+            } else {
+                panel.classList.remove('open');
+                fab.classList.remove('hidden');
+            }
+        }
+
+        function listenToMessages() {
+            if (state.messagesListener) {
+                state.messagesListener();
+            }
+
+            state.messagesListener = db.collection('messages')
+                .where('groupId', '==', state.currentGroup)
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snapshot => {
+                    state.messages = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const timestamp = data.timestamp?.toDate();
+                        state.messages.push({
+                            id: doc.id,
+                            from: data.from,
+                            fromId: data.fromId,
+                            text: data.text,
+                            time: timestamp ? timestamp.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        });
+                    });
+                    
+                    if (state.chatOpen) {
+                        renderMessages();
+                    }
+                }, error => {
+                    console.error('Error en listener de mensajes:', error);
+                    if (error.code === 'failed-precondition') {
+                        alert('⚠️ IMPORTANTE: Necesitas crear un índice en Firebase.\n\n1. Ve a: https://console.firebase.google.com/project/radar-dragon/firestore/indexes\n2. Crea un índice compuesto para la colección "messages" con los campos:\n   - groupId (Ascending)\n   - timestamp (Ascending)\n\nDespués de crear el índice, espera unos minutos y recarga la página.');
+                    }
+                });
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = state.messages.map(msg => {
+                const isSent = msg.fromId === state.currentUser.uid;
+                return `
+                    <div class="message ${isSent ? 'sent' : 'received'}">
+                        <div class="message-bubble">
+                            ${!isSent ? `<div class="message-sender">${msg.from}</div>` : ''}
+                            <div class="message-text">${msg.text}</div>
+                            <div class="message-time">${msg.time}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (text) {
+                try {
+                    await db.collection('messages').add({
+                        groupId: state.currentGroup,
+                        from: state.currentUser.name,
+                        fromId: state.currentUser.uid,
+                        text: text,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    input.value = '';
+                } catch (error) {
+                    console.error('Error al enviar mensaje:', error);
+                    alert('Error al enviar mensaje. Asegúrate de haber creado el índice en Firebase.');
+                }
+            }
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // ==========================================
+        // INIT
+        // ==========================================
+        window.addEventListener('load', () => {
+            // Setup touch handlers
+            setupTouchHandlers('mapContainer');
+            setupTouchHandlers('radarContainer');
+            
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    try {
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+                        const userData = userDoc.data();
+                        state.currentUser = {
+                            uid: user.uid,
+                            name: userData.name,
+                            phone: userData.phone || '',
+                            username: userData.username || userData.name,
+                            avatar: userData.avatar || '🐉'
+                        };
+                        document.getElementById('welcomeUser').textContent = `Hola, ${userData.name} 👋`;
+                        showGroups();
+                    } catch (error) {
+                        console.error('Error al cargar datos del usuario:', error);
+                        await auth.signOut();
+                        showWelcome();
+                    }
+                } else {
+                    showWelcome();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
