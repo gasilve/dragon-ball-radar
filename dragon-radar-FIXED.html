@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a4d2e">
+    <title>🐉 Dragon Radar</title>
+    <style>
+        :root {
+            --bg-primary: #00cc44;
+            --bg-gradient-start: #00cc44;
+            --bg-gradient-end: #00ff66;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --screen-bg: white;
+            --panel-bg: rgba(0, 0, 0, 0.7);
+            --grid-color: rgba(0, 255, 102, 0.3);
+            --border-color: #e5e7eb;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a4d2e;
+            --bg-gradient-start: #1a4d2e;
+            --bg-gradient-end: #0d3d29;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --screen-bg: #1a1a1a;
+            --panel-bg: rgba(0, 0, 0, 0.9);
+            --grid-color: rgba(0, 255, 102, 0.2);
+            --border-color: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            touch-action: none;
+            transition: background-color 0.3s;
+        }
+
+        #app {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-primary);
+            background-image: 
+                linear-gradient(0deg, var(--grid-color) 2px, transparent 2px),
+                linear-gradient(90deg, var(--grid-color) 2px, transparent 2px);
+            background-size: 40px 40px;
+            transition: background-color 0.3s;
+        }
+
+        .left-controls {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 2000;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--screen-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .screen {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            z-index: 1000;
+            overflow-y: auto;
+            transition: background 0.3s;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .screen-content {
+            background: var(--screen-bg);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transition: background-color 0.3s;
+        }
+
+        .screen-content h1 {
+            color: #00cc44;
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 32px;
+        }
+
+        .screen-content h2 {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-primary);
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            background: var(--screen-bg);
+            color: var(--text-primary);
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #00cc44;
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .avatar-option {
+            aspect-ratio: 1;
+            border: 3px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--screen-bg);
+        }
+
+        .avatar-option.selected {
+            border-color: #00cc44;
+            transform: scale(1.1);
+            box-shadow: 0 0 12px rgba(0, 204, 68, 0.5);
+        }
+
+        .avatar-option:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: #00cc44;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            background: #00aa33;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: var(--screen-bg);
+            color: #00cc44;
+            border: 2px solid #00cc44;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .btn-secondary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-icon {
+            width: 100%;
+            background: var(--screen-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:active {
+            transform: scale(0.98);
+        }
+
+        .group-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .group-item {
+            background: var(--screen-bg);
+            border: 2px solid var(--border-color);
+            padding: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .group-item:active {
+            transform: scale(0.98);
+            border-color: #00cc44;
+        }
+
+        .group-name {
+            font-weight: bold;
+            color: var(--text-primary);
+            font-size: 18px;
+        }
+
+        .group-members {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #mainView {
+            position: fixed;
+            inset: 0;
+            display: none;
+        }
+
+        #mainView.active {
+            display: block;
+        }
+
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+            border-bottom: 2px solid rgba(0, 204, 68, 0.3);
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .group-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #00cc44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .group-info h3 {
+            color: white;
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .group-info p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .top-bar-right {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        #mapContainer, #radarContainer {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        #radarContainer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #radar {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            max-width: 90vw;
+            max-height: 90vw;
+        }
+
+        #radarCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #radarBalls {
+            position: absolute;
+            inset: 0;
+        }
+
+        #map {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        #rangeRings {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .range-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(0, 255, 102, 0.3);
+            border-radius: 50%;
+        }
+
+        #dragonballs {
+            position: absolute;
+            inset: 0;
+        }
+
+        .dragonball {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .dragonball:active {
+            transform: translate(-50%, -50%) scale(1.2) !important;
+        }
+
+        .info-label {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* FLECHA DIRECCIONAL */
+        .direction-arrow {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 255, 102, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        #chatPanel {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            height: 70%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            transition: bottom 0.3s;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+        }
+
+        #chatPanel.open {
+            bottom: 0;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            color: white;
+            margin: 0;
+        }
+
+        #chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            display: flex;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message.received {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            word-wrap: break-word;
+        }
+
+        .message.sent .message-bubble {
+            background: #00cc44;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received .message-bubble {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-sender {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .chat-input-container {
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            gap: 12px;
+        }
+
+        #chatInput {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 24px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+
+        #chatInput::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        #chatInput:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #00cc44;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+
+        .send-btn:active {
+            transform: scale(0.9);
+        }
+
+        .member-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--screen-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        .member-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #00cc44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: bold;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .member-phone {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .setting-label {
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            background: var(--border-color);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .switch.active {
+            background: #00cc44;
+        }
+
+        .switch-toggle {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: left 0.3s;
+        }
+
+        .switch.active .switch-toggle {
+            left: 26px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- PANTALLA BIENVENIDA -->
+        <div id="welcomeScreen" class="screen active">
+            <div class="screen-content">
+                <h1>🐉 Dragon Radar</h1>
+                <h2>Encuentra a tus amigos</h2>
+                <button class="btn-primary" onclick="showLogin()">Iniciar Sesión</button>
+                <button class="btn-secondary" onclick="showRegister()">Registrarse</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA LOGIN -->
+        <div id="loginScreen" class="screen">
+            <div class="screen-content">
+                <h1>👋 Bienvenido</h1>
+                <h2>Ingresa a tu cuenta</h2>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="loginPhone" placeholder="+54 9 11 1234-5678">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                </div>
+                <button class="btn-primary" onclick="handleLogin()">Entrar</button>
+                <button class="btn-secondary" onclick="showWelcome()">Volver</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA REGISTRO -->
+        <div id="registerScreen" class="screen">
+            <div class="screen-content">
+                <h1>🌟 Nuevo Usuario</h1>
+                <h2>Crea tu cuenta</h2>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="registerName" placeholder="Tu nombre">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="registerPhone" placeholder="+54 9 11 1234-5678">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="registerPassword" placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label>Avatar</label>
+                    <div class="avatar-grid">
+                        <div class="avatar-option selected" data-avatar="🐉">🐉</div>
+                        <div class="avatar-option" data-avatar="⭐">⭐</div>
+                        <div class="avatar-option" data-avatar="🔮">🔮</div>
+                        <div class="avatar-option" data-avatar="🎯">🎯</div>
+                        <div class="avatar-option" data-avatar="🌟">🌟</div>
+                        <div class="avatar-option" data-avatar="💫">💫</div>
+                        <div class="avatar-option" data-avatar="✨">✨</div>
+                        <div class="avatar-option" data-avatar="🌠">🌠</div>
+                        <div class="avatar-option" data-avatar="🎨">🎨</div>
+                        <div class="avatar-option" data-avatar="🎭">🎭</div>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="handleRegister()">Crear Cuenta</button>
+                <button class="btn-secondary" onclick="showWelcome()">Volver</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA GRUPOS -->
+        <div id="groupsScreen" class="screen">
+            <div class="screen-content">
+                <h1 id="welcomeUser">Hola 👋</h1>
+                <h2>Tus grupos</h2>
+                <div class="group-list" id="groupList"></div>
+                <button class="btn-primary" onclick="showCreateGroup()">➕ Crear Grupo</button>
+                <button class="btn-secondary" onclick="showJoinGroup()">🔗 Unirse a Grupo</button>
+                <button class="btn-icon" onclick="handleLogout()">🚪</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA CREAR GRUPO -->
+        <div id="createGroupScreen" class="screen">
+            <div class="screen-content">
+                <h1>➕ Nuevo Grupo</h1>
+                <h2>Crea un grupo para compartir ubicaciones</h2>
+                <div class="form-group">
+                    <label>Nombre del Grupo</label>
+                    <input type="text" id="groupName" placeholder="Mi Grupo">
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="groupDescription" rows="3" placeholder="Descripción opcional..."></textarea>
+                </div>
+                <button class="btn-primary" onclick="handleCreateGroup()">Crear</button>
+                <button class="btn-secondary" onclick="showGroups()">Volver</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA UNIRSE A GRUPO -->
+        <div id="joinGroupScreen" class="screen">
+            <div class="screen-content">
+                <h1>🔗 Unirse a Grupo</h1>
+                <h2>Ingresa el código del grupo</h2>
+                <div class="form-group">
+                    <label>Código del Grupo</label>
+                    <input type="text" id="groupCode" placeholder="Código de 6 dígitos">
+                </div>
+                <button class="btn-primary" onclick="handleJoinGroup()">Unirse</button>
+                <button class="btn-secondary" onclick="showGroups()">Volver</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA MIEMBROS -->
+        <div id="membersScreen" class="screen">
+            <div class="screen-content">
+                <h1>👥 Miembros</h1>
+                <h2 id="membersGroupName"></h2>
+                <div class="member-list" id="memberList"></div>
+                <div class="form-group">
+                    <label>Código del Grupo</label>
+                    <input type="text" id="groupCodeDisplay" readonly style="text-align: center; font-weight: bold; font-size: 20px;">
+                </div>
+                <button class="btn-secondary" onclick="backToRadar()">Volver</button>
+            </div>
+        </div>
+
+        <!-- PANTALLA AJUSTES -->
+        <div id="settingsScreen" class="screen">
+            <div class="screen-content">
+                <h1>⚙️ Ajustes</h1>
+                <h2>Configuración de la app</h2>
+                <div class="setting-item">
+                    <span class="setting-label">Notificaciones</span>
+                    <div class="switch" id="notifSwitch" onclick="toggleNotifications()">
+                        <div class="switch-toggle"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">Compartir ubicación</span>
+                    <div class="switch active" id="locationSwitch" onclick="toggleLocationSharing()">
+                        <div class="switch-toggle"></div>
+                    </div>
+                </div>
+                <button class="btn-secondary" onclick="backToRadar()">Volver</button>
+            </div>
+        </div>
+
+        <!-- VISTA PRINCIPAL -->
+        <div id="mainView">
+            <!-- CONTROLES IZQUIERDA -->
+            <div class="left-controls">
+                <div class="control-btn" id="themeBtn" onclick="toggleTheme()">🌙</div>
+                <div class="control-btn" id="rangeBtn" onclick="toggleRange()">m</div>
+            </div>
+
+            <!-- BARRA SUPERIOR -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <div class="group-avatar">🐉</div>
+                    <div class="group-info">
+                        <h3 id="currentGroupName">Grupo</h3>
+                        <p id="currentMembersCount">0 miembros</p>
+                    </div>
+                </div>
+                <div class="top-bar-right">
+                    <div class="icon-btn" id="modeBtn" onclick="toggleMode()">🎯</div>
+                    <div class="icon-btn" onclick="toggleChat()">💬</div>
+                    <div class="icon-btn" onclick="showMembers()">👥</div>
+                    <div class="icon-btn" onclick="showSettings()">⚙️</div>
+                </div>
+            </div>
+
+            <!-- MAPA -->
+            <div id="mapContainer">
+                <div id="map">
+                    <div id="rangeRings"></div>
+                    <div id="dragonballs"></div>
+                </div>
+            </div>
+
+            <!-- RADAR -->
+            <div id="radarContainer" class="hidden">
+                <div id="radar">
+                    <canvas id="radarCanvas" width="400" height="400"></canvas>
+                    <div id="radarBalls"></div>
+                </div>
+            </div>
+
+            <!-- PANEL CHAT -->
+            <div id="chatPanel">
+                <div class="chat-header">
+                    <h3>💬 Chat</h3>
+                    <div class="icon-btn" onclick="toggleChat()">✕</div>
+                </div>
+                <div id="chatMessages"></div>
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" placeholder="Escribe un mensaje..." onkeypress="handleChatKeyPress(event)">
+                    <button class="send-btn" onclick="sendMessage()">📤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmQJ3sxLgHb6M8yPOBXI9sLI6mZj8u3Zg",
+            authDomain: "dragon-radar-4d3dd.firebaseapp.com",
+            projectId: "dragon-radar-4d3dd",
+            storageBucket: "dragon-radar-4d3dd.firebasestorage.app",
+            messagingSenderId: "889365019358",
+            appId: "1:889365019358:web:8f9f63e13f354d5d27ec52"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const state = {
+            currentUser: null,
+            currentGroup: null,
+            selectedAvatar: '🐉',
+            myLocation: null,
+            detectedUsers: [],
+            messages: [],
+            chatOpen: false,
+            mode: 'map',
+            range: 10, // metros por defecto
+            rangeMode: 'm', // m, sq, km
+            locationPermissionGranted: false,
+            settings: {
+                notifications: false,
+                shareLocation: true
+            }
+        };
+
+        // ==========================================
+        // TEMA
+        // ==========================================
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeBtn = document.getElementById('themeBtn');
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.setAttribute('data-theme', 'light');
+                themeBtn.textContent = '☀️';
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                themeBtn.textContent = '🌙';
+            }
+        }
+
+        // ==========================================
+        // RANGOS (m / sq / km)
+        // ==========================================
+        function toggleRange() {
+            const rangeBtn = document.getElementById('rangeBtn');
+            if (state.rangeMode === 'm') {
+                state.rangeMode = 'sq';
+                state.range = 100;
+                rangeBtn.textContent = 'sq';
+            } else if (state.rangeMode === 'sq') {
+                state.rangeMode = 'km';
+                state.range = 1000;
+                rangeBtn.textContent = 'km';
+            } else {
+                state.rangeMode = 'm';
+                state.range = 10;
+                rangeBtn.textContent = 'm';
+            }
+            if (state.mode === 'map') {
+                renderMap();
+            } else {
+                renderRadar();
+            }
+        }
+
+        // ==========================================
+        // NAVEGACIÓN
+        // ==========================================
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            document.getElementById('mainView').classList.remove('active');
+        }
+
+        function showWelcome() {
+            showScreen('welcomeScreen');
+        }
+
+        function showLogin() {
+            showScreen('loginScreen');
+        }
+
+        function showRegister() {
+            showScreen('registerScreen');
+        }
+
+        function showGroups() {
+            showScreen('groupsScreen');
+            loadGroups();
+        }
+
+        function showCreateGroup() {
+            showScreen('createGroupScreen');
+        }
+
+        function showJoinGroup() {
+            showScreen('joinGroupScreen');
+        }
+
+        function showMembers() {
+            showScreen('membersScreen');
+            loadMembers();
+        }
+
+        function showSettings() {
+            showScreen('settingsScreen');
+            updateSettingsUI();
+        }
+
+        function backToRadar() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('mainView').classList.add('active');
+        }
+
+        // ==========================================
+        // AVATARES
+        // ==========================================
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('avatar-option')) {
+                document.querySelectorAll('.avatar-option').forEach(a => a.classList.remove('selected'));
+                e.target.classList.add('selected');
+                state.selectedAvatar = e.target.dataset.avatar;
+            }
+        });
+
+        // ==========================================
+        // AUTENTICACIÓN
+        // ==========================================
+        async function handleRegister() {
+            const name = document.getElementById('registerName').value.trim();
+            const phone = document.getElementById('registerPhone').value.trim();
+            const password = document.getElementById('registerPassword').value;
+
+            if (!name || !phone || !password) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+
+            try {
+                const email = phone.replace(/\s/g, '') + '@dragonradar.app';
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await db.collection('users').doc(userCredential.user.uid).set({
+                    name: name,
+                    phone: phone,
+                    avatar: state.selectedAvatar,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showGroups();
+            } catch (error) {
+                alert('Error al registrarse: ' + error.message);
+            }
+        }
+
+        async function handleLogin() {
+            const phone = document.getElementById('loginPhone').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!phone || !password) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+
+            try {
+                const email = phone.replace(/\s/g, '') + '@dragonradar.app';
+                await auth.signInWithEmailAndPassword(email, password);
+                showGroups();
+            } catch (error) {
+                alert('Error al iniciar sesión: ' + error.message);
+            }
+        }
+
+        async function handleLogout() {
+            if (state.locationWatchId) {
+                navigator.geolocation.clearWatch(state.locationWatchId);
+            }
+            await auth.signOut();
+            showWelcome();
+        }
+
+        // ==========================================
+        // GRUPOS
+        // ==========================================
+        async function loadGroups() {
+            const groupList = document.getElementById('groupList');
+            groupList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Cargando...</p>';
+
+            try {
+                const groupsSnapshot = await db.collection('groups')
+                    .where('members', 'array-contains', state.currentUser.uid)
+                    .get();
+
+                if (groupsSnapshot.empty) {
+                    groupList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No tienes grupos aún</p>';
+                    return;
+                }
+
+                groupList.innerHTML = '';
+                groupsSnapshot.forEach(doc => {
+                    const group = doc.data();
+                    const item = document.createElement('div');
+                    item.className = 'group-item';
+                    item.onclick = () => selectGroup(doc.id);
+                    item.innerHTML = `
+                        <div>
+                            <div class="group-name">${group.name}</div>
+                            <div class="group-members">${group.members.length} miembros</div>
+                        </div>
+                        <div style="font-size: 24px;">🐉</div>
+                    `;
+                    groupList.appendChild(item);
+                });
+            } catch (error) {
+                groupList.innerHTML = '<p style="text-align: center; color: red;">Error al cargar grupos</p>';
+            }
+        }
+
+        async function handleCreateGroup() {
+            const name = document.getElementById('groupName').value.trim();
+            const description = document.getElementById('groupDescription').value.trim();
+
+            if (!name) {
+                alert('Por favor ingresa un nombre para el grupo');
+                return;
+            }
+
+            try {
+                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                await db.collection('groups').add({
+                    name: name,
+                    description: description,
+                    code: code,
+                    members: [state.currentUser.uid],
+                    createdBy: state.currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('✅ Grupo creado exitosamente!\n\nCódigo: ' + code + '\n\nComparte este código con tus amigos para que se unan.');
+                showGroups();
+            } catch (error) {
+                console.error('Error al crear grupo:', error);
+                alert('Error al crear grupo: ' + error.message);
+            }
+        }
+
+        async function handleJoinGroup() {
+            const code = document.getElementById('groupCode').value.trim().toUpperCase();
+
+            if (!code) {
+                alert('Por favor ingresa un código');
+                return;
+            }
+
+            try {
+                console.log('Buscando grupo con código:', code);
+                const groupSnapshot = await db.collection('groups').where('code', '==', code).get();
+
+                console.log('Grupos encontrados:', groupSnapshot.size);
+
+                if (groupSnapshot.empty) {
+                    alert('❌ Grupo no encontrado\n\nVerifica que:\n• El código sea correcto\n• El código tenga 6 caracteres\n• No haya espacios extra');
+                    return;
+                }
+
+                const groupDoc = groupSnapshot.docs[0];
+                const groupData = groupDoc.data();
+                
+                // Verificar si ya es miembro
+                if (groupData.members.includes(state.currentUser.uid)) {
+                    alert('✅ Ya eres miembro de este grupo');
+                    showGroups();
+                    return;
+                }
+                
+                await db.collection('groups').doc(groupDoc.id).update({
+                    members: firebase.firestore.FieldValue.arrayUnion(state.currentUser.uid)
+                });
+                
+                alert('✅ Te has unido al grupo: ' + groupData.name);
+                showGroups();
+            } catch (error) {
+                console.error('Error al unirse al grupo:', error);
+                if (error.code === 'failed-precondition') {
+                    alert('⚠️ Error de configuración\n\nNecesitas crear un índice en Firebase:\n1. Ve a Firebase Console\n2. Firestore Database\n3. Indexes\n4. Crea índice para campo "code"');
+                } else {
+                    alert('Error al unirse al grupo: ' + error.message);
+                }
+            }
+        }
+
+        async function selectGroup(groupId) {
+            state.currentGroup = groupId;
+            
+            const groupDoc = await db.collection('groups').doc(groupId).get();
+            const groupData = groupDoc.data();
+            
+            document.getElementById('currentGroupName').textContent = groupData.name;
+            document.getElementById('currentMembersCount').textContent = `${groupData.members.length} miembros`;
+            
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('mainView').classList.add('active');
+            
+            // Solicitar ubicación solo si no se ha concedido
+            if (!state.locationPermissionGranted) {
+                requestLocation();
+            } else {
+                startLocationTracking();
+            }
+            
+            listenToGroupUpdates();
+            listenToMessages();
+        }
+
+        async function loadMembers() {
+            const memberList = document.getElementById('memberList');
+            const groupDoc = await db.collection('groups').doc(state.currentGroup).get();
+            const groupData = groupDoc.data();
+            
+            document.getElementById('membersGroupName').textContent = groupData.name;
+            document.getElementById('groupCodeDisplay').value = groupData.code;
+            
+            memberList.innerHTML = '';
+            for (const memberId of groupData.members) {
+                const userDoc = await db.collection('users').doc(memberId).get();
+                const userData = userDoc.data();
+                
+                const item = document.createElement('div');
+                item.className = 'member-item';
+                item.innerHTML = `
+                    <div class="member-avatar">${userData.avatar}</div>
+                    <div class="member-info">
+                        <div class="member-name">${userData.name}</div>
+                        <div class="member-phone">${userData.phone}</div>
+                    </div>
+                `;
+                memberList.appendChild(item);
+            }
+        }
+
+        // ==========================================
+        // UBICACIÓN
+        // ==========================================
+        function requestLocation() {
+            if (!navigator.geolocation) {
+                alert('Tu navegador no soporta geolocalización');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    state.locationPermissionGranted = true;
+                    state.myLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    startLocationTracking();
+                },
+                (error) => {
+                    alert('Por favor activa la ubicación para usar la app');
+                }
+            );
+        }
+
+        function startLocationTracking() {
+            if (!state.settings.shareLocation) return;
+
+            state.locationWatchId = navigator.geolocation.watchPosition(
+                async (position) => {
+                    state.myLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    await db.collection('locations').doc(state.currentUser.uid).set({
+                        groupId: state.currentGroup,
+                        userId: state.currentUser.uid,
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    if (state.mode === 'map') {
+                        renderMap();
+                    } else {
+                        renderRadar();
+                    }
+                },
+                (error) => {
+                    console.error('Error de ubicación:', error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                }
+            );
+        }
+
+        function listenToGroupUpdates() {
+            db.collection('locations')
+                .where('groupId', '==', state.currentGroup)
+                .onSnapshot(async (snapshot) => {
+                    state.detectedUsers = [];
+                    
+                    for (const doc of snapshot.docs) {
+                        const location = doc.data();
+                        if (location.userId !== state.currentUser.uid && state.myLocation) {
+                            const userDoc = await db.collection('users').doc(location.userId).get();
+                            const userData = userDoc.data();
+                            
+                            const distance = calculateDistance(
+                                state.myLocation.lat,
+                                state.myLocation.lng,
+                                location.lat,
+                                location.lng
+                            );
+                            
+                            state.detectedUsers.push({
+                                name: userData.name,
+                                avatar: userData.avatar,
+                                stars: Math.floor(Math.random() * 7) + 1,
+                                lat: location.lat,
+                                lng: location.lng,
+                                distance: distance
+                            });
+                        }
+                    }
+                    
+                    if (state.mode === 'map') {
+                        renderMap();
+                    } else {
+                        renderRadar();
+                    }
+                });
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        function convertDistance(meters) {
+            if (state.rangeMode === 'm') {
+                return meters.toFixed(0) + 'm';
+            } else if (state.rangeMode === 'sq') {
+                return meters.toFixed(0) + 'm';
+            } else {
+                return (meters / 1000).toFixed(2) + 'km';
+            }
+        }
+
+        // ==========================================
+        // SETTINGS
+        // ==========================================
+        function updateSettingsUI() {
+            const notifSwitch = document.getElementById('notifSwitch');
+            const locationSwitch = document.getElementById('locationSwitch');
+            
+            if (state.settings.notifications) {
+                notifSwitch.classList.add('active');
+            } else {
+                notifSwitch.classList.remove('active');
+            }
+            
+            if (state.settings.shareLocation) {
+                locationSwitch.classList.add('active');
+            } else {
+                locationSwitch.classList.remove('active');
+            }
+        }
+
+        function toggleNotifications() {
+            state.settings.notifications = !state.settings.notifications;
+            updateSettingsUI();
+            
+            if (state.settings.notifications) {
+                requestNotificationPermission();
+            }
+        }
+
+        function toggleLocationSharing() {
+            state.settings.shareLocation = !state.settings.shareLocation;
+            updateSettingsUI();
+            
+            if (state.settings.shareLocation) {
+                startLocationTracking();
+            } else {
+                if (state.locationWatchId) {
+                    navigator.geolocation.clearWatch(state.locationWatchId);
+                }
+            }
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission();
+            }
+        }
+
+        // ==========================================
+        // RENDERIZADO
+        // ==========================================
+        function createDragonBallSVG(stars) {
+            return `
+                <svg width="60" height="60" viewBox="0 0 100 100" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+                    <defs>
+                        <radialGradient id="ballGradient">
+                            <stop offset="0%" style="stop-color:#ff8800;stop-opacity:1" />
+                            <stop offset="70%" style="stop-color:#ff6600;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#cc4400;stop-opacity:1" />
+                        </radialGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="45" fill="url(#ballGradient)" stroke="#8b0000" stroke-width="3"/>
+                    <ellipse cx="35" cy="35" rx="12" ry="8" fill="rgba(255,255,255,0.4)"/>
+                    ${Array.from({length: stars}, (_, i) => {
+                        const angle = (i * 360 / stars) - 90;
+                        const rad = (angle * Math.PI) / 180;
+                        const x = 50 + 25 * Math.cos(rad);
+                        const y = 50 + 25 * Math.sin(rad);
+                        return `<polygon points="${x},${y-8} ${x-2},${y-2} ${x-8},${y-2} ${x-3},${y+2} ${x-5},${y+8} ${x},${y+4} ${x+5},${y+8} ${x+3},${y+2} ${x+8},${y-2} ${x+2},${y-2}" fill="#ff0000" stroke="#8b0000" stroke-width="1"/>`;
+                    }).join('')}
+                </svg>
+            `;
+        }
+
+        function renderMap() {
+            const container = document.getElementById('dragonballs');
+            container.innerHTML = '';
+
+            const rings = document.getElementById('rangeRings');
+            rings.innerHTML = '';
+            for (let i = 1; i <= 3; i++) {
+                const size = (state.range / 100) * 200 * i / 3;
+                const ring = document.createElement('div');
+                ring.className = 'range-ring';
+                ring.style.width = size + 'px';
+                ring.style.height = size + 'px';
+                rings.appendChild(ring);
+            }
+
+            state.detectedUsers.forEach(user => {
+                if (user.distance <= state.range) {
+                    // Usuario dentro del rango
+                    const scale = 50000;
+                    const dx = (user.lng - state.myLocation.lng) * scale;
+                    const dy = (state.myLocation.lat - user.lat) * scale;
+
+                    const ball = document.createElement('div');
+                    ball.className = 'dragonball';
+                    ball.style.left = `calc(50% + ${dx}px)`;
+                    ball.style.top = `calc(50% + ${dy}px)`;
+                    ball.style.transform = 'translate(-50%, -50%)';
+                    ball.innerHTML = `
+                        ${createDragonBallSVG(user.stars)}
+                        <div class="info-label" style="top: 65px;">
+                            ${user.avatar} ${user.name} - ${convertDistance(user.distance)}
+                        </div>
+                    `;
+                    container.appendChild(ball);
+                } else {
+                    // Usuario fuera del rango - mostrar flecha
+                    const angle = Math.atan2(
+                        user.lat - state.myLocation.lat,
+                        user.lng - state.myLocation.lng
+                    );
+                    
+                    let position = '';
+                    let arrowRotation = 0;
+                    
+                    // Determinar posición y rotación de la flecha
+                    const deg = (angle * 180 / Math.PI + 450) % 360;
+                    
+                    if (deg >= 337.5 || deg < 22.5) { // Este
+                        position = 'right: 20px; top: 50%; transform: translateY(-50%)';
+                        arrowRotation = 0;
+                    } else if (deg >= 22.5 && deg < 67.5) { // Noreste
+                        position = 'right: 20px; top: 90px;';
+                        arrowRotation = 45;
+                    } else if (deg >= 67.5 && deg < 112.5) { // Norte
+                        position = 'left: 50%; top: 90px; transform: translateX(-50%)';
+                        arrowRotation = 90;
+                    } else if (deg >= 112.5 && deg < 157.5) { // Noroeste
+                        position = 'left: 20px; top: 90px;';
+                        arrowRotation = 135;
+                    } else if (deg >= 157.5 && deg < 202.5) { // Oeste
+                        position = 'left: 20px; top: 50%; transform: translateY(-50%)';
+                        arrowRotation = 180;
+                    } else if (deg >= 202.5 && deg < 247.5) { // Suroeste
+                        position = 'left: 20px; bottom: 20px;';
+                        arrowRotation = 225;
+                    } else if (deg >= 247.5 && deg < 292.5) { // Sur
+                        position = 'left: 50%; bottom: 20px; transform: translateX(-50%)';
+                        arrowRotation = 270;
+                    } else { // Sureste
+                        position = 'right: 20px; bottom: 20px;';
+                        arrowRotation = 315;
+                    }
+                    
+                    const arrow = document.createElement('div');
+                    arrow.className = 'direction-arrow';
+                    arrow.style.cssText = position;
+                    arrow.innerHTML = `<span style="transform: rotate(${arrowRotation}deg); display: block;">→</span>`;
+                    arrow.title = `${user.avatar} ${user.name} - ${convertDistance(user.distance)}`;
+                    container.appendChild(arrow);
+                }
+            });
+        }
+
+        let radarAnimationFrame;
+        function renderRadar() {
+            const canvas = document.getElementById('radarCanvas');
+            const ctx = canvas.getContext('2d');
+            const centerX = 200;
+            const centerY = 200;
+            const radius = 160;
+
+            function draw() {
+                ctx.clearRect(0, 0, 400, 400);
+
+                for (let i = 1; i <= 3; i++) {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, (radius / 3) * i, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(0, 255, 102, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(0, 255, 102, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.moveTo(centerX, centerY - radius);
+                ctx.lineTo(centerX, centerY + radius);
+                ctx.moveTo(centerX - radius, centerY);
+                ctx.lineTo(centerX + radius, centerY);
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate((Date.now() / 1000) % (Math.PI * 2));
+                
+                const gradient = ctx.createLinearGradient(0, 0, radius, 0);
+                gradient.addColorStop(0, 'rgba(0, 255, 102, 0.5)');
+                gradient.addColorStop(1, 'rgba(0, 255, 102, 0)');
+                
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(radius, 0);
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.restore();
+
+                radarAnimationFrame = requestAnimationFrame(draw);
+            }
+
+            draw();
+
+            const radarBalls = document.getElementById('radarBalls');
+            radarBalls.innerHTML = '';
+
+            state.detectedUsers.forEach(user => {
+                if (user.distance <= state.range) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = (user.distance / state.range) * 150;
+                    const x = Math.cos(angle) * distance;
+                    const y = Math.sin(angle) * distance;
+
+                    const ball = document.createElement('div');
+                    ball.style.position = 'absolute';
+                    ball.style.left = '50%';
+                    ball.style.top = '50%';
+                    ball.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+                    ball.className = 'dragonball';
+                    ball.innerHTML = `
+                        ${createDragonBallSVG(user.stars)}
+                        <div class="info-label" style="top: 65px;">
+                            ${user.avatar} ${user.name} - ${convertDistance(user.distance)}
+                        </div>
+                    `;
+                    radarBalls.appendChild(ball);
+                }
+            });
+        }
+
+        function toggleMode() {
+            state.mode = state.mode === 'map' ? 'radar' : 'map';
+            const modeBtn = document.getElementById('modeBtn');
+            const mapContainer = document.getElementById('mapContainer');
+            const radarContainer = document.getElementById('radarContainer');
+
+            if (state.mode === 'radar') {
+                modeBtn.textContent = '🗺️';
+                mapContainer.classList.add('hidden');
+                radarContainer.classList.remove('hidden');
+                renderRadar();
+            } else {
+                modeBtn.textContent = '🎯';
+                radarContainer.classList.add('hidden');
+                mapContainer.classList.remove('hidden');
+                if (radarAnimationFrame) {
+                    cancelAnimationFrame(radarAnimationFrame);
+                }
+                renderMap();
+            }
+        }
+
+        // ==========================================
+        // CHAT
+        // ==========================================
+        function toggleChat() {
+            state.chatOpen = !state.chatOpen;
+            const panel = document.getElementById('chatPanel');
+            if (state.chatOpen) {
+                panel.classList.add('open');
+                renderMessages();
+            } else {
+                panel.classList.remove('open');
+            }
+        }
+
+        function listenToMessages() {
+            db.collection('messages')
+                .where('groupId', '==', state.currentGroup)
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snapshot => {
+                    state.messages = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        const timestamp = data.timestamp?.toDate();
+                        return {
+                            from: data.from,
+                            fromId: data.fromId,
+                            text: data.text,
+                            time: timestamp ? timestamp.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        };
+                    });
+                    if (state.chatOpen) {
+                        renderMessages();
+                    }
+                });
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = state.messages.map(msg => {
+                const isSent = msg.fromId === state.currentUser.uid;
+                return `
+                    <div class="message ${isSent ? 'sent' : 'received'}">
+                        <div class="message-bubble">
+                            ${!isSent ? `<div class="message-sender">${msg.from}</div>` : ''}
+                            <div>${msg.text}</div>
+                            <div class="message-time">${msg.time}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (text) {
+                await db.collection('messages').add({
+                    groupId: state.currentGroup,
+                    from: state.currentUser.name,
+                    fromId: state.currentUser.uid,
+                    text: text,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                input.value = '';
+            }
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // ==========================================
+        // INIT
+        // ==========================================
+        window.addEventListener('load', () => {
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    const userData = userDoc.data();
+                    state.currentUser = {
+                        uid: user.uid,
+                        name: userData.name,
+                        phone: userData.phone,
+                        avatar: userData.avatar || '🐉'
+                    };
+                    document.getElementById('welcomeUser').textContent = `Hola, ${userData.name} 👋`;
+                    showGroups();
+                } else {
+                    showWelcome();
+                }
+            });
+        });
+
+        document.addEventListener('touchmove', function(event) {
+            if (event.scale !== 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
